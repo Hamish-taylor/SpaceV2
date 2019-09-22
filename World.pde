@@ -3,23 +3,25 @@ class World {
 
 
     Chunk[][] chunks; 
-    int width;
 
 
     World(int width) {
-        this.width = width;
-        chunks = new Chunk[200][width];
+        chunks = new Chunk[1][chunkSize];
         for(int y = 0; y < chunks.length; y++) {
             for(int x = 0; x < chunks[0].length; x++) {
-                Chunk c = new Chunk(x*blockSize,y*blockSize);
+                Chunk c = new Chunk(x,y);
                 chunks[y][x] = c;
             }
         }
     }
 
     public void render() {
-        for(int y = 0; y < 10; y++) {
-            for(int x = 0; x < width; x++) {
+        int pX = (int)(playerX/(float)chunkSize)-2;
+        if (pX < 0) pX = 0;
+        int pXP = (int)(playerX/(float)chunkSize) + 2;
+        if(pXP > chunks[0].length) pXP = chunks[0].length;
+        for(int y = 0; y < 1; y++) {
+            for(int x = pX; x < pXP; x++) {
                 chunks[y][x].render();
             }
         }
