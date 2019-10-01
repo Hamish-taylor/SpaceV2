@@ -1,30 +1,37 @@
 class World {
+    
+    int id;
+    Chunk[] chunks; 
 
-
-
-    Chunk[][] chunks; 
-
-
-    World(int width) {
-        chunks = new Chunk[1][chunkSize];
-        for(int y = 0; y < chunks.length; y++) {
-            for(int x = 0; x < chunks[0].length; x++) {
-                Chunk c = new Chunk(x,y);
-                chunks[y][x] = c;
+    World() {
+        
+        worldCount++;
+        id = worldCount;
+        chunks = new Chunk[chunkSize];    
+            for(int x = 0; x < chunks.length; x++) {
+                Chunk c = new Chunk(x);
+                chunks[x] = c;
             }
-        }
     }
 
     public void render() {
-        int pX = (int)(playerX/(float)chunkSize)-2;
+        float pX = (playerX/blockSize)/(float)chunkSize-chunkRenderDist;
         if (pX < 0) pX = 0;
-        int pXP = (int)(playerX/(float)chunkSize) + 2;
-        if(pXP > chunks[0].length) pXP = chunks[0].length;
-        for(int y = 0; y < 1; y++) {
-            for(int x = pX; x < pXP; x++) {
-                chunks[y][x].render();
+        float pXP = (playerX/blockSize)/(float)chunkSize + chunkRenderDist;
+        if(pXP > chunks.length) pXP = chunks.length;
+            for(float x = pX; x < pXP; x++) {
+                chunks[(int)x].render();
             }
-        }
+    }
+
+    public int getBlock(float x,float y) {
+        if((int)(x/(chunkSize*blockSize)) < 0 || (int)(x/(chunkSize*blockSize)) > chunks.length) return 0;
+        return chunks[(int)(x/(chunkSize*blockSize))].getBlock(x,y);
+    }
+
+    public void changeBlock(float x,float y,int id) {
+        if((int)(x/(chunkSize*blockSize)) < 0 || (int)(x/(chunkSize*blockSize)) > chunks.length) return;
+        chunks[(int)(x/(chunkSize*blockSize))].changeBlock(x,y,id);
     }
 
 }

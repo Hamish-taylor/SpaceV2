@@ -1,20 +1,23 @@
 class Block{
 
     private int id;
-    private color texture;
+    private PImage texture;
+    private boolean solid;
 
 
-    Block(int id,color texture) {
+    Block(int id,String texture,boolean solid) {
         this.id = id;
-        this.texture = texture;
+        this.texture = loadImage("Blocks/"+texture);
+        this.solid = solid;
+    }
+
+    public boolean isSolid() {
+        return solid;
     }
 
 
-
-
     public void draw(int x,int y) {
-        fill(texture);
-        rect(x,y,blockSize,blockSize);
+        image(texture, x, y,blockSize,blockSize);
     }
 
     public int getId() {
