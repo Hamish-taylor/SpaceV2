@@ -3,7 +3,7 @@ HashMap<Integer,Block> blockTypes = new HashMap<Integer,Block>();
 
 HashMap<Integer,World> worlds = new HashMap<Integer,World>();
 
-HashMap<Integer,AtomicInteger> inventory = new HashMap<Integer,AtomicInteger>();
+HashMap<Integer,Integer> inventory = new HashMap<Integer,Integer>();
 
 //pixels
 public int blockSize = 32;
@@ -199,7 +199,7 @@ void mousePressed() {
             if(!inventory.containsKey(blockId)) {            
                 inventory.put(blockId,0);
             }
-            inventory.get(blockId)++;
+            inventory.put(blockId,inventory.get(blockId)+1);
         }
     }
     if(mouseButton == RIGHT) {
