@@ -260,12 +260,12 @@ class Chunk {
     
 
     Chunk(int x) {
-        
         this.x = x;
             for(int yy = 0; yy < chunkHeight; yy++) {
                 int[] row = new int[chunkSize];
                 for(int xx = 0; xx < chunkSize; xx++) {
-                    float n = noise((xx*x)/50.0f, (yy*x)/50.0f,0)*255;
+                    float n = noise((xx+x*chunkSize)*0.04f, (yy)*0.04f,0)*255;
+                   
                     if(yy < 20) {
                         
                         n *=20.0f/(yy);
@@ -280,8 +280,21 @@ class Chunk {
                             else row[xx] = 1;   
                         }
                     }else {
-                        if(n > 150) row[xx] = 0;
-                        else row[xx] = 1;    
+                        if(n > 150)  row[xx] = 0;
+                        else {
+                            for(int i = 5; i < blockTypes.size(); i++) {
+                                float rand = i*9999;
+                                float nn = noise((xx+x*chunkSize+rand)*(0.1f), (yy+rand)*(0.1f),0)*255;
+                                if(nn > 180) {
+                                    row[xx] = i;
+                                    i = 11111;
+                                }
+                                else {
+                                    row[xx] = 1; 
+                                    
+                                }
+                            }                           
+                        }  
                     }          
             }  
             blocks[yy] = row;
@@ -314,7 +327,7 @@ class Chunk {
     }
 
     public void changeBlock(float xx,float yy,int id) {
-         xx /=blockSize;
+        xx /=blockSize;
         yy/=blockSize;
         
         xx -= chunkSize*x;
@@ -327,7 +340,7 @@ class Chunk {
     public void drawBackground() {
         float pY = ((float)playerY/(float)blockSize)-16;
         if(pY < 20) pY = 20;
-        image(background,x*chunkSize*blockSize,pY*0.95f*blockSize);
+        image(background,x*chunkSize*blockSize,pY*blockSize);
     }
 
 }

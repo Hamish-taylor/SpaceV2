@@ -3,3 +3,4 @@ Stone.png true
 Grass.png true
 Dirt.png true
 StoneBackground.png false
+Iron.png 
