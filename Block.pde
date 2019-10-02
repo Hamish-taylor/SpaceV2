@@ -4,11 +4,13 @@ class Block{
     private PImage texture;
     private boolean solid;
 
+    int hardness;
 
-    Block(int id,String texture,boolean solid) {
+    Block(int id,String texture,boolean solid,int hardness) {
         this.id = id;
         this.texture = loadImage("Blocks/"+texture);
         this.solid = solid;
+        this.hardness = hardness;
     }
 
     public boolean isSolid() {
@@ -24,7 +26,9 @@ class Block{
         return id;
     }
 
-
+    public int hardness() {
+        return hardness;
+    }
 }
 
 

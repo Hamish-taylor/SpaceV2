@@ -1,6 +1,6 @@
-Air.png false
-Stone.png true
-Grass.png true
-Dirt.png true
-StoneBackground.png false
-Iron.png 
+Air.png false 0
+Stone.png true 5
+Grass.png true 3
+Dirt.png true 2
+StoneBackground.png false 0
+Iron.png true 8

@@ -8,7 +8,7 @@ class Chunk {
             for(int yy = 0; yy < chunkHeight; yy++) {
                 int[] row = new int[chunkSize];
                 for(int xx = 0; xx < chunkSize; xx++) {
-                    float n = noise((xx+x*chunkSize)*0.04, (yy)*0.04,0)*255;
+                    float n = noise((xx+x*chunkSize*blockSize)*0.04, (yy)*0.04,0)*255;
                    
                     if(yy < 20) {
                         
