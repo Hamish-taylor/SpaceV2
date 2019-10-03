@@ -2,19 +2,18 @@ class World {
     
     int id;
     Chunk[] chunks; 
+    boolean generated = false;
+
+    String name = "";
 
     World() {
-        
         worldCount++;
         id = worldCount;
-        chunks = new Chunk[chunkSize];    
-            for(int x = 0; x < chunks.length; x++) {
-                Chunk c = new Chunk(x);
-                chunks[x] = c;
-            }
+        genName();   
     }
 
     public void render() {
+        if(generated == false) generatePlanet();
         float pX = (playerX/blockSize)/(float)chunkSize-chunkRenderDist;
         if (pX < 0) pX = 0;
         float pXP = (playerX/blockSize)/(float)chunkSize + chunkRenderDist;
@@ -34,4 +33,31 @@ class World {
         chunks[(int)(x/(chunkSize*blockSize))].changeBlock(x,y,id);
     }
 
+
+    private void genName() {
+        for(int i = 0; i < random(2,5); i++) {
+            name = name + alphabet[(int)random(0,25)];
+        }
+        name = name + " " + (int)random(0,99999);
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public void generatePlanet() {
+        noiseSeed((long)random(-99999999,99999999));
+        chunks = new Chunk[chunkSize];    
+        for(int i = 0; i < random(1,5); i++) {
+            
+        }
+        for(int x = 0; x < chunks.length; x++) {
+            Chunk c = new Chunk(x);
+            chunks[x] = c;
+        }
+        generated = true;
+    }
+    public boolean generated() {
+        return generated;
+    }
 }
