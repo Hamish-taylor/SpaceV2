@@ -37,7 +37,7 @@ float gravity = 2;
 //blocks
 public int chunkSize = 32;
 public int chunkHeight = 256;
-float playerX = 5000;
+float playerX = 16*blockSize*chunkSize;
 float playerY = -10;
 int verticalRenderDist = 20;
 
@@ -51,6 +51,10 @@ int currentWorld = 0;
 int xOffset = 0;
 
 int selectedItem = 0;
+
+boolean guiIsActive = false; //shouild the gui be drawn
+
+int planetDisplay = 0; //planet currently being displayed on the menue
 
 //PImage sky;
 PImage background;
@@ -66,22 +70,13 @@ double startBreak = -1;
 public void setup() {
     player = loadImage("Blocks/Player.png");
     background = loadImage("Blocks/BackGround1.png");
-    g = new Gui();
-    UIPanel p = new UIPanel(width/2-250,height/2-350,width/2,(int)(height/1.5f),color(100,100,100,240),"Main Menu",width/2-100,200,false);
-    p.setTextModeCenter(true);
-    p.formatText(30,color(0));
-    g.addPanel(p);
-    p = new UIPanel(width/2-(width/8),height/2-250,width/4,30,color(100,100,100,240),"Play",width/2-100,height/2-600,true);
-    p.setTextModeCenter(true);
-    p.formatText(30,color(0));
-    g.addPanel(p);
+    
 
     
     //sky = loadImage("Blocks/Sky.png");
     loadFiles();
 
-    w = new World();
-    worlds.put(worldCount,w);
+    createPlanet();
 }
 
 public void loadFiles() {
@@ -95,16 +90,20 @@ public void loadFiles() {
 }
 
 public void keyPressed() {
-     if(key == 'w' && isGrounded()){     
-            yVelocity -= 30; 
-        }
-        if(key == 'a' && xVelocity > -10){  
-            xVelocity -= movementSpeed;     
-        }
-        if(key == 'd' && xVelocity < 10) {  
-            xVelocity += movementSpeed; 
-        }   
-        key = ' ';
+    if(key == 'w' && isGrounded()){     
+        yVelocity -= 30; 
+    }
+    if(key == 'a' && xVelocity > -10){  
+        xVelocity -= movementSpeed;     
+    }
+    if(key == 'd' && xVelocity < 10) {  
+        xVelocity += movementSpeed; 
+    }   
+    if(key == 'e') {
+        guiIsActive = !guiIsActive;
+        planetDisplay = currentWorld;
+    }
+    key = ' ';
 }
 
 public void mouseWheel(MouseEvent event) {
@@ -113,101 +112,102 @@ public void mouseWheel(MouseEvent event) {
 
 
 public void draw() {
-    
-    if(mouseButton == LEFT) {
-        int blockId = worlds.get(currentWorld).getBlock(mouseX+playerX-width/2,mouseY+playerY-height/2);
-        println(millis() - startBreak);
-        if(blockTypes.get(blockId).isSolid() && (millis() - startBreak > (blockTypes.get(blockId).hardness() * 100)) && startBreak != -1 && curBlock.x == (int)(mouseX+playerX-width/2)/blockSize && curBlock.y == (int)(mouseY+playerY-height/2)/blockSize) {     
-            worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,0);
-            
-            if(!inventory.containsKey(blockId)) {            
-                inventory.put(blockId,0);
+    if(!guiIsActive) {
+        if(mouseButton == LEFT) {
+            int blockId = worlds.get(currentWorld).getBlock(mouseX+playerX-width/2,mouseY+playerY-height/2);
+            println(millis() - startBreak);
+            if(blockTypes.get(blockId).isSolid() && (millis() - startBreak > (blockTypes.get(blockId).hardness() * 100)) && startBreak != -1 && curBlock.x == (int)(mouseX+playerX-width/2)/blockSize && curBlock.y == (int)(mouseY+playerY-height/2)/blockSize) {     
+                worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,0);
+                
+                if(!inventory.containsKey(blockId)) {            
+                    inventory.put(blockId,0);
+                }
+                inventory.put(blockId,inventory.get(blockId)+1);
+                curBlock = new PVector(-1,-1);
+                startBreak = -1;
+            }else {
+                curBlock.x = (int)(mouseX+playerX-width/2)/blockSize;
+                curBlock.y = (int)(mouseY+playerY-height/2)/blockSize;
+                if(startBreak == -1 || !blockTypes.get(blockId).isSolid())startBreak = millis();
+
             }
-            inventory.put(blockId,inventory.get(blockId)+1);
-            curBlock = new PVector(-1,-1);
-            startBreak = -1;
+
         }else {
             curBlock.x = (int)(mouseX+playerX-width/2)/blockSize;
             curBlock.y = (int)(mouseY+playerY-height/2)/blockSize;
-            if(startBreak == -1 || !blockTypes.get(blockId).isSolid())startBreak = millis();
-
+            startBreak = -1;
         }
 
-    }else {
-        curBlock.x = (int)(mouseX+playerX-width/2)/blockSize;
-        curBlock.y = (int)(mouseY+playerY-height/2)/blockSize;
-        startBreak = -1;
-    }
 
 
+        //clear();
+        if(selectedItem > inventory.size()-1) selectedItem = 0;
+        if(selectedItem < 0)selectedItem = inventory.size()-1;
+        if(inventory.size() == 0) selectedItem = 0;
+        
+        
+        background(0, 0,255);
 
-    //clear();
-    if(selectedItem > inventory.size()-1) selectedItem = 0;
-    if(selectedItem < 0)selectedItem = inventory.size()-1;
-    if(inventory.size() == 0) selectedItem = 0;
-    
-    
-    background(0, 0,255);
+        if(keyPressed) {
+        
+        }else{
+            xVelocity = 0;
+        }
+            if(yVelocity < 0 && !doCollision("up")) playerY += yVelocity;
+            else if(yVelocity > 0 && !doCollision("down")) playerY += yVelocity;
 
-    if(keyPressed) {
-       
-    }else{
-        xVelocity = 0;
-    }
+            if(xVelocity < 0 && !doCollision("left")) playerX += xVelocity;
+            else if(xVelocity > 0 && !doCollision("right")) playerX += xVelocity;
 
-        if(yVelocity < 0 && !doCollision("up")) playerY += yVelocity;
-        else if(yVelocity > 0 && !doCollision("down")) playerY += yVelocity;
-
-        if(xVelocity < 0 && !doCollision("left")) playerX += xVelocity;
-        else if(xVelocity > 0 && !doCollision("right")) playerX += xVelocity;
-
-        if(yVelocity < movementSpeed) yVelocity+= gravity;
-    
-
-    translate(-playerX+(width/2.0f), -playerY+(height/2.0f));
-    
-    playerX = (int) playerX;
-    playerY = (int) playerY;
-    worlds.get(currentWorld).render();
-    fill(255);
-    //rect(playerX-(playerSize/2),playerY-(playerSize/2),playerSize,playerSize);
-    image(player, playerX-(playerSize/2), playerY-(playerSize/2), playerSize, playerSize);
-    translate(-(-playerX+(width/2.0f)), -(-playerY+(height/2.0f)));
-    //g.drawUI();
-   
-   
-   //inventory
-    
-
-    xOffset = -(int)((inventory.size()*blockSize)/2)-blockSize;
-
-    stroke(0);
-    for(Integer entry : inventory.keySet()) {
-    if(inventory.get(entry) <= 0) removeItems.add(entry);
-    else {
-        xOffset+=blockSize;
-        blockTypes.get(entry).draw((width/2)+xOffset,height-blockSize);
-        noFill();
-        rect((width/2)+xOffset,height-blockSize,blockSize,height-blockSize);
+            if(yVelocity < movementSpeed) yVelocity+= gravity;
+        translate(-playerX+(width/2.0f), -playerY+(height/2.0f));
+        
+        playerX = (int) playerX;
+        playerY = (int) playerY;
+        worlds.get(currentWorld).render();
         fill(255);
-        text(inventory.get(entry),(width/2)+xOffset+blockSize-textWidth(inventory.get(entry).toString()),height);
-    }
-   
-    }
-    for(Integer i: removeItems) {
-        inventory.remove(i);
-    }
-    if(inventory.size() > 0) {
-        stroke(255);
-        noFill();
-        xOffset = -(int)((inventory.size()*blockSize)/2);
-        rect((width/2)+xOffset+selectedItem*blockSize,height-blockSize,blockSize,height-blockSize);
+        //rect(playerX-(playerSize/2),playerY-(playerSize/2),playerSize,playerSize);
+        image(player, playerX-(playerSize/2), playerY-(playerSize/2), playerSize, playerSize);
+        translate(-(-playerX+(width/2.0f)), -(-playerY+(height/2.0f)));
+        
+    
+    
+    //inventory
+        
+
+        xOffset = -(int)((inventory.size()*blockSize)/2)-blockSize;
+
+        stroke(0);
+        for(Integer entry : inventory.keySet()) {
+        if(inventory.get(entry) <= 0) removeItems.add(entry);
+        else {
+            xOffset+=blockSize;
+            blockTypes.get(entry).draw((width/2)+xOffset,height-blockSize);
+            noFill();
+            rect((width/2)+xOffset,height-blockSize,blockSize,height-blockSize);
+            fill(255);
+            textSize(12);
+            text(inventory.get(entry),(width/2)+xOffset+blockSize-textWidth(inventory.get(entry).toString()),height);
+        }
+    
+        }
+        for(Integer i: removeItems) {
+            inventory.remove(i);
+        }
+        if(inventory.size() > 0) {
+            stroke(255);
+            noFill();
+            xOffset = -(int)((inventory.size()*blockSize)/2);
+            rect((width/2)+xOffset+selectedItem*blockSize,height-blockSize,blockSize,height-blockSize);
+        }
+
+
+    }else {
+        drawGUI();
     }
 }
 
 public boolean doCollision(String dir) {
-
-
     if(dir.equals("up")) {
         if((blockTypes.get(worlds.get(currentWorld).getBlock(playerX-(0.5f*playerSize),playerY-abs(yVelocity)-(0.5f*playerSize))).isSolid()) ||
         (blockTypes.get(worlds.get(currentWorld).getBlock(playerX+(0.5f*playerSize),playerY-abs(yVelocity)-(0.5f*playerSize))).isSolid())) {
@@ -250,10 +250,7 @@ public boolean doCollision(String dir) {
 
             if((playerX+0.5f*blockSize)-(((int)((playerX+(0.5f*playerSize))/blockSize))*blockSize) != 0) {
                 playerX+=(((int)((playerX+(0.5f*playerSize))/blockSize))*blockSize)-(playerX+0.5f*blockSize);
-            }
-            
-
-            
+            }     
             return true;
         }
     }
@@ -283,6 +280,17 @@ public boolean isGrounded() {
 public void mousePressed() {
     int blockId = worlds.get(currentWorld).getBlock(mouseX+playerX-width/2,mouseY+playerY-height/2);
     
+    if(guiIsActive && mouseButton == LEFT) {
+        if(mouseX > width/4+100 && mouseX < width/4+132 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) {
+            planetDisplay--;
+            if(planetDisplay < 0) planetDisplay = worlds.size()-1;
+        }else if(mouseX > width/4+100+width/4 && mouseX < (width/4+100+width/4)+32 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) {
+            planetDisplay++;
+        }else if(mouseX > width/2-80 && mouseX < width/2+80 && mouseY > height/2-20 && mouseY < height/2+20) {
+            flyToNewPlanet(planetDisplay);
+        }
+
+    }
     if(mouseButton == RIGHT) {
         if(inventory.size() > 0 && !blockTypes.get(blockId).isSolid()) {          
             worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,(int)inventory.keySet().toArray()[selectedItem]);
@@ -290,6 +298,57 @@ public void mousePressed() {
         }
     }
 }
+
+
+
+public void drawGUI() {
+    //Gui
+    fill(200,200);
+    image(loadImage("blocks/StarBackground.png"),width/4,height/4,width/2,height/2);
+    if(mouseX > width/4+100 && mouseX < width/4+132 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) image(loadImage("blocks/arrowFill.png"),width/4+116,height/4 +80);
+    else image(loadImage("blocks/arrow.png"),width/4+116,height/4 +80);
+    if(mouseX > width/4+100+width/4 && mouseX < (width/4+100+width/4)+32 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) image(loadImage("blocks/arrow1Fill.png"),width/4+100+width/4,height/4 +80);
+    else image(loadImage("blocks/arrow1.png"),width/4+100+width/4,height/4 +80);
+   
+    fill(255);
+    textSize(30);
+    text("Planet Menu",width/2-textWidth("Planet Menu")/2,height/4+50);
+    fill(100,100);
+    if(mouseX > width/2-80 && mouseX < width/2+80 && mouseY > height/2-20 && mouseY < height/2+20) fill(255,100);
+    rect(width/2-80,height/2-20,160,40);
+    
+    
+
+    //Planet information
+    fill(255);
+    if(worlds.get(planetDisplay) == null) createPlanet();
+    text(worlds.get(planetDisplay).name(),width/2-textWidth(worlds.get(planetDisplay).name())/2,height/4+105);
+    
+
+
+
+    text("Current planet: " + worlds.get(currentWorld).name(),width/2-textWidth("Current planet: " + worlds.get(currentWorld).name())/2,-50+height*3/4);
+    textSize(20);
+    stroke(255);
+    text("Travel to planet",width/2-textWidth("Travel to planet")/2,height/2+8);
+}
+
+public void createPlanet() {
+    World w = new World();
+    worlds.put(worldCount,w);
+}
+
+//method to move the player to a new planet
+public void flyToNewPlanet(int planetNum) {
+    if(planetNum != currentWorld) {
+        this.currentWorld = planetNum;
+        playerX = 16*blockSize*chunkSize;
+        playerY = -10;
+        if(!worlds.get(currentWorld).generated()) worlds.get(currentWorld).generatePlanet();
+        guiIsActive = false;
+    }
+}
+public String[] alphabet = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
 class Block{
 
     private int id;
@@ -419,17 +478,24 @@ class Gui {
     public ArrayList<UIPanel> panels = new ArrayList<UIPanel>();
 
     public void drawUI() {
-
-        for(UIPanel u: panels) {
-            u.drawP();
+        if(isActive) {
+            for(UIPanel u: panels) {
+                u.drawP();
+            }
         }
-
     }
 
     public void addPanel(UIPanel u) {  
         panels.add(u);
     }
 
+    public void setActive() {
+        isActive = !isActive;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
 
 }
 class UIPanel {
@@ -508,19 +574,18 @@ class World {
     
     int id;
     Chunk[] chunks; 
+    boolean generated = false;
+
+    String name = "";
 
     World() {
-        
         worldCount++;
         id = worldCount;
-        chunks = new Chunk[chunkSize];    
-            for(int x = 0; x < chunks.length; x++) {
-                Chunk c = new Chunk(x);
-                chunks[x] = c;
-            }
+        genName();   
     }
 
     public void render() {
+        if(generated == false) generatePlanet();
         float pX = (playerX/blockSize)/(float)chunkSize-chunkRenderDist;
         if (pX < 0) pX = 0;
         float pXP = (playerX/blockSize)/(float)chunkSize + chunkRenderDist;
@@ -540,6 +605,30 @@ class World {
         chunks[(int)(x/(chunkSize*blockSize))].changeBlock(x,y,id);
     }
 
+
+    private void genName() {
+        for(int i = 0; i < random(2,5); i++) {
+            name = name + alphabet[(int)random(0,25)];
+        }
+        name = name + " " + (int)random(0,99999);
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public void generatePlanet() {
+        noiseSeed((long)random(-99999999,99999999));
+        chunks = new Chunk[chunkSize];    
+        for(int x = 0; x < chunks.length; x++) {
+            Chunk c = new Chunk(x);
+            chunks[x] = c;
+        }
+        generated = true;
+    }
+    public boolean generated() {
+        return generated;
+    }
 }
   public void settings() {  size(1000,1000,P2D); }
   static public void main(String[] passedArgs) {
