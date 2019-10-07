@@ -180,7 +180,6 @@ public void draw() {
         rect((int)((mouseX+playerX-width/2)/blockSize)*blockSize,(int)((mouseY+playerY-height/2)/blockSize)*blockSize,blockSize,blockSize);
 
         translate(-(-playerX+(width/2.0f)), -(-playerY+(height/2.0f)));
-   
     //inventory
         xOffset = -(int)((inventory.size()*blockSize)/2)-blockSize;
 
