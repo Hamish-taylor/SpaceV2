@@ -1,6 +1,5 @@
-Air.png false 0
+Air.png false 0 
 Stone.png true 5
 Grass.png true 3
+BedRock.png true 1000
 Dirt.png true 2
-StoneBackground.png false 0
-Iron.png true 8

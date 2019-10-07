@@ -2,31 +2,35 @@ class Chunk {
     int[][] blocks = new int[chunkHeight][chunkSize];
     int x;
     
+    float surfaceSize;
+    float caveAmount;
 
-    Chunk(int x) {
+    Chunk(int x,int oreStart,int oreEnd,float surfaceSize,float caveAmount) {
         this.x = x;
+        this.surfaceSize = surfaceSize;
+        this.caveAmount = caveAmount;
             for(int yy = 0; yy < chunkHeight; yy++) {
                 int[] row = new int[chunkSize];
                 for(int xx = 0; xx < chunkSize; xx++) {
-                    float n = noise((xx+x*chunkSize*blockSize)*0.04, (yy)*0.04,0)*255;
-                   
-                    if(yy < 20) {
+                    float n = noise((xx+x*chunkSize)*0.04, (yy)*0.04,0)*255;
+                    
+                    if(yy < surfaceSize) {
                         
-                        n *=20.0/(yy);
-                        if(n < 150 && blocks[yy-1][xx] == 0) {
+                        n *=surfaceSize/(yy);
+                        if(n < caveAmount && blocks[yy-1][xx] == 0) {
                             row[xx] = 2;
-                        }else if(n < 150 && blocks[yy-1][xx] == 2) {
-                            row[xx] = 3;
-                        }else if(n < 150 && n > 100 && blocks[yy-1][xx] == 3) {
-                             row[xx] = 3;
+                        }else if(n < caveAmount && blocks[yy-1][xx] == 2) {
+                            row[xx] = 4;
+                        }else if(n < caveAmount && n > 100 && blocks[yy-1][xx] == 4) {
+                             row[xx] = 4;
                         }else {
-                            if(n > 150) row[xx] = 0;
+                            if(n > caveAmount) row[xx] = 0;
                             else row[xx] = 1;   
                         }
                     }else {
-                        if(n > 150)  row[xx] = 0;
+                        if(n > caveAmount)  row[xx] = 0;
                         else {
-                            for(int i = 5; i < blockTypes.size(); i++) {
+                            for(int i = oreStart; i < oreEnd; i++) {
                                 float rand = i*9999;
                                 float nn = noise((xx+x*chunkSize+rand)*(0.1), (yy+rand)*(0.1),0)*255;
                                 if(nn > 180) {
@@ -34,12 +38,12 @@ class Chunk {
                                     i = 11111;
                                 }
                                 else {
-                                    row[xx] = 1; 
-                                    
+                                    row[xx] = 1;                                    
                                 }
                             }                           
                         }  
-                    }          
+                    }   
+                    if(yy == chunkHeight-1) row[xx] = 3;       
             }  
             blocks[yy] = row;
         }
@@ -64,8 +68,8 @@ class Chunk {
         
         xx -= chunkSize*x;
    
-        if(floor(yy) < 0 || floor(yy) > chunkHeight) return 0;
-        if(floor(xx) < 0 || floor(xx) > chunkSize) return 0;
+        if(floor(yy) < 0 || floor(yy) > chunkHeight-1) return 0;
+        if(floor(xx) < 0 || floor(xx) > chunkSize-1) return 0;
         return blocks[floor(yy)][floor(xx)];
         
     }
@@ -83,7 +87,7 @@ class Chunk {
 
     void drawBackground() {
         float pY = ((float)playerY/(float)blockSize)-16;
-        if(pY < 20) pY = 20;
+        if(pY < surfaceSize) pY = surfaceSize;
         image(background,x*chunkSize*blockSize,pY*blockSize);
     }
 

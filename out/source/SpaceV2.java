@@ -52,6 +52,8 @@ int xOffset = 0;
 
 int selectedItem = 0;
 
+int numBlocks = -1;
+
 boolean guiIsActive = false; //shouild the gui be drawn
 
 int planetDisplay = 0; //planet currently being displayed on the menue
@@ -59,18 +61,20 @@ int planetDisplay = 0; //planet currently being displayed on the menue
 //PImage sky;
 PImage background;
 PImage player;
+PImage mainMenu;
 Gui g;
 
 PVector curBlock = new PVector(-1,-1);
 double startBreak = -1;
 
+boolean main = true;
 
 
 
 public void setup() {
     player = loadImage("Blocks/Player.png");
     background = loadImage("Blocks/BackGround1.png");
-    
+    mainMenu = loadImage("Blocks/Main Menu.png");
 
     
     //sky = loadImage("Blocks/Sky.png");
@@ -84,22 +88,22 @@ public void loadFiles() {
     
     for(int i = 0; i < temp.length; i++) {
         String[] lines = split(temp[i], ' ');
-        Block b = new Block(i,lines[0],Boolean.valueOf(lines[1]),Integer.valueOf(lines[2]));
-        blockTypes.put(i,b);
+        Block b = new Block(lines[0],Boolean.valueOf(lines[1]),Integer.valueOf(lines[2]),false);
+        blockTypes.put(numBlocks,b);
     }
 }
 
 public void keyPressed() {
-    if(key == 'w' && isGrounded()){     
+    if((key == 'w' || key == 'W')  && isGrounded()){     
         yVelocity -= 30; 
     }
-    if(key == 'a' && xVelocity > -10){  
+    if((key == 'a' || key == 'A') && xVelocity > -10){  
         xVelocity -= movementSpeed;     
     }
-    if(key == 'd' && xVelocity < 10) {  
+    if((key == 'd' || key == 'D') && xVelocity < 10) {  
         xVelocity += movementSpeed; 
     }   
-    if(key == 'e') {
+    if(key == 'e' || key == 'E') {
         guiIsActive = !guiIsActive;
         planetDisplay = currentWorld;
     }
@@ -110,41 +114,43 @@ public void mouseWheel(MouseEvent event) {
   selectedItem += event.getCount();
 }
 
-
 public void draw() {
-    if(!guiIsActive) {
+    if(main) {
+        drawMain();
+    }else if(!guiIsActive) {
+
+        if(worlds.get(currentWorld).generated() == false) worlds.get(currentWorld).generatePlanet();  //making sure the current planet has been generated
+
         if(mouseButton == LEFT) {
             int blockId = worlds.get(currentWorld).getBlock(mouseX+playerX-width/2,mouseY+playerY-height/2);
-            println(millis() - startBreak);
-            if(blockTypes.get(blockId).isSolid() && (millis() - startBreak > (blockTypes.get(blockId).hardness() * 100)) && startBreak != -1 && curBlock.x == (int)(mouseX+playerX-width/2)/blockSize && curBlock.y == (int)(mouseY+playerY-height/2)/blockSize) {     
-                worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,0);
-                
-                if(!inventory.containsKey(blockId)) {            
-                    inventory.put(blockId,0);
+
+            if(!(sqrt(sq(playerX - (mouseX+playerX-width/2))+sq(playerY-(mouseY+playerY-height/2)))/blockSize > 5)) {
+                if(blockTypes.get(blockId).isSolid() && (millis() - startBreak > (blockTypes.get(blockId).hardness() * 100)) && startBreak != -1 && curBlock.x == (int)(mouseX+playerX-width/2)/blockSize && curBlock.y == (int)(mouseY+playerY-height/2)/blockSize) {     
+                    worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,0);
+                    
+                    if(!inventory.containsKey(blockId)) {            
+                        inventory.put(blockId,0);
+                    }
+                    inventory.put(blockId,inventory.get(blockId)+1);
+                    curBlock = new PVector(-1,-1);
+                    startBreak = -1;
+                }else {
+                    curBlock.x = (int)(mouseX+playerX-width/2)/blockSize;
+                    curBlock.y = (int)(mouseY+playerY-height/2)/blockSize;
+                    if(startBreak == -1 || !blockTypes.get(blockId).isSolid())startBreak = millis();
+
                 }
-                inventory.put(blockId,inventory.get(blockId)+1);
-                curBlock = new PVector(-1,-1);
-                startBreak = -1;
-            }else {
-                curBlock.x = (int)(mouseX+playerX-width/2)/blockSize;
-                curBlock.y = (int)(mouseY+playerY-height/2)/blockSize;
-                if(startBreak == -1 || !blockTypes.get(blockId).isSolid())startBreak = millis();
-
             }
-
         }else {
             curBlock.x = (int)(mouseX+playerX-width/2)/blockSize;
             curBlock.y = (int)(mouseY+playerY-height/2)/blockSize;
             startBreak = -1;
         }
 
-
-
         //clear();
         if(selectedItem > inventory.size()-1) selectedItem = 0;
         if(selectedItem < 0)selectedItem = inventory.size()-1;
         if(inventory.size() == 0) selectedItem = 0;
-        
         
         background(0, 0,255);
 
@@ -169,12 +175,8 @@ public void draw() {
         //rect(playerX-(playerSize/2),playerY-(playerSize/2),playerSize,playerSize);
         image(player, playerX-(playerSize/2), playerY-(playerSize/2), playerSize, playerSize);
         translate(-(-playerX+(width/2.0f)), -(-playerY+(height/2.0f)));
-        
-    
-    
+   
     //inventory
-        
-
         xOffset = -(int)((inventory.size()*blockSize)/2)-blockSize;
 
         stroke(0);
@@ -188,20 +190,18 @@ public void draw() {
             fill(255);
             textSize(12);
             text(inventory.get(entry),(width/2)+xOffset+blockSize-textWidth(inventory.get(entry).toString()),height);
-        }
-    
+        } 
         }
         for(Integer i: removeItems) {
             inventory.remove(i);
         }
+        removeItems.clear();
         if(inventory.size() > 0) {
             stroke(255);
             noFill();
             xOffset = -(int)((inventory.size()*blockSize)/2);
             rect((width/2)+xOffset+selectedItem*blockSize,height-blockSize,blockSize,height-blockSize);
         }
-
-
     }else {
         drawGUI();
     }
@@ -214,11 +214,9 @@ public boolean doCollision(String dir) {
              
             if(((((int)((playerX+(0.5f*playerSize))/blockSize))*blockSize) == playerX+0.5f*blockSize) && !blockTypes.get(worlds.get(currentWorld).getBlock(playerX,playerY-abs(yVelocity)-(0.5f*playerSize))).isSolid()) return false;
             if(((((int)((playerX-(0.5f*playerSize))/blockSize))*blockSize) == playerX-0.5f*blockSize) && !blockTypes.get(worlds.get(currentWorld).getBlock(playerX,playerY-abs(yVelocity)-(0.5f*playerSize))).isSolid()) return false;
-
             if((playerY-0.5f*blockSize)-(((int)((playerY-(0.5f*playerSize))/blockSize))*blockSize) != 0) {
                 playerY+=(((int)((playerY+(0.5f*playerSize))/blockSize))*blockSize)-(playerY+0.5f*blockSize);
-            }
-            
+            }         
             return true;
         }
     }
@@ -231,11 +229,9 @@ public boolean doCollision(String dir) {
 
             if((playerY+0.5f*blockSize)-(((int)((playerY+(0.5f*playerSize))/blockSize))*blockSize) != 0) {
                 playerY-=(playerY+0.5f*blockSize)-(((int)((playerY+(0.5f*playerSize))/blockSize))*blockSize)-blockSize;
-            }
-            
+            }  
             return true;
         }
-
     }
     if(dir.equals("left")) {
 
@@ -256,20 +252,15 @@ public boolean doCollision(String dir) {
     }
     if(dir.equals("right")) {
         if((blockTypes.get(worlds.get(currentWorld).getBlock(playerX+movementSpeed+(0.5f*playerSize),playerY+(0.5f*playerSize))).isSolid()) ||
-        (blockTypes.get(worlds.get(currentWorld).getBlock(playerX+movementSpeed+(0.5f*playerSize),playerY-(0.5f*playerSize))).isSolid())) {
-           
+        (blockTypes.get(worlds.get(currentWorld).getBlock(playerX+movementSpeed+(0.5f*playerSize),playerY-(0.5f*playerSize))).isSolid())) {          
             if(((((int)((playerY+(0.5f*playerSize))/blockSize))*blockSize) == playerY+0.5f*blockSize) && !blockTypes.get(worlds.get(currentWorld).getBlock(playerX+movementSpeed+(0.5f*playerSize),playerY)).isSolid()) return false;
             if(((((int)((playerY-(0.5f*playerSize))/blockSize))*blockSize) == playerY-0.5f*blockSize) && !blockTypes.get(worlds.get(currentWorld).getBlock(playerX+movementSpeed+(0.5f*playerSize),playerY)).isSolid()) return false;
-
-
-           if((playerX+0.5f*blockSize)-(((int)((playerX+(0.5f*playerSize))/blockSize))*blockSize) != 0) {
+            if((playerX+0.5f*blockSize)-(((int)((playerX+(0.5f*playerSize))/blockSize))*blockSize) != 0) {
                 playerX+=(((int)((playerX+(0.5f*playerSize))/blockSize))*blockSize)-(playerX+0.5f*blockSize)+blockSize;
-            }
-            
+            }      
             return true;
         }
-    }
-    
+    }  
     return false;
 }
 
@@ -278,28 +269,31 @@ public boolean isGrounded() {
 }
 
 public void mousePressed() {
-    int blockId = worlds.get(currentWorld).getBlock(mouseX+playerX-width/2,mouseY+playerY-height/2);
-    
-    if(guiIsActive && mouseButton == LEFT) {
-        if(mouseX > width/4+100 && mouseX < width/4+132 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) {
-            planetDisplay--;
-            if(planetDisplay < 0) planetDisplay = worlds.size()-1;
-        }else if(mouseX > width/4+100+width/4 && mouseX < (width/4+100+width/4)+32 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) {
-            planetDisplay++;
-        }else if(mouseX > width/2-80 && mouseX < width/2+80 && mouseY > height/2-20 && mouseY < height/2+20) {
-            flyToNewPlanet(planetDisplay);
+    if(!main) {     
+        int blockId = worlds.get(currentWorld).getBlock(mouseX+playerX-width/2,mouseY+playerY-height/2);
+        
+        if(guiIsActive && mouseButton == LEFT) {
+            if(mouseX > width/4+100 && mouseX < width/4+132 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) {
+                planetDisplay--;
+                if(planetDisplay < 0) planetDisplay = worlds.size()-1;
+            }else if(mouseX > width/4+100+width/4 && mouseX < (width/4+100+width/4)+32 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) {
+                planetDisplay++;
+            }else if(mouseX > width/2-80 && mouseX < width/2+80 && mouseY > height/2-20 && mouseY < height/2+20) {
+                flyToNewPlanet(planetDisplay);
+            }
         }
-
-    }
-    if(mouseButton == RIGHT) {
-        if(inventory.size() > 0 && !blockTypes.get(blockId).isSolid()) {          
-            worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,(int)inventory.keySet().toArray()[selectedItem]);
-            inventory.put((int)inventory.keySet().toArray()[selectedItem],inventory.get((int)inventory.keySet().toArray()[selectedItem])-1);
+        if(mouseButton == RIGHT) {
+            if(!(sqrt(sq(playerX - (mouseX+playerX-width/2))+sq(playerY-(mouseY+playerY-height/2)))/blockSize > 5)) {
+                if(inventory.size() > 0 && !blockTypes.get(blockId).isSolid()) {          
+                    worlds.get(currentWorld).changeBlock(mouseX+playerX-width/2,mouseY+playerY-height/2,(int)inventory.keySet().toArray()[selectedItem]);
+                    inventory.put((int)inventory.keySet().toArray()[selectedItem],inventory.get((int)inventory.keySet().toArray()[selectedItem])-1);
+                }
+            }
         }
+    }else {
+        if(mouseX > width/2-150 && mouseX < width/2+150 && mouseY > height-height/16-25 && mouseY < height-height/16+25) main = !main;
     }
 }
-
-
 
 public void drawGUI() {
     //Gui
@@ -309,28 +303,37 @@ public void drawGUI() {
     else image(loadImage("blocks/arrow.png"),width/4+116,height/4 +80);
     if(mouseX > width/4+100+width/4 && mouseX < (width/4+100+width/4)+32 && mouseY > height/4 +80 && mouseY < height/4 +80 + 32) image(loadImage("blocks/arrow1Fill.png"),width/4+100+width/4,height/4 +80);
     else image(loadImage("blocks/arrow1.png"),width/4+100+width/4,height/4 +80);
-   
+    
     fill(255);
     textSize(30);
     text("Planet Menu",width/2-textWidth("Planet Menu")/2,height/4+50);
     fill(100,100);
     if(mouseX > width/2-80 && mouseX < width/2+80 && mouseY > height/2-20 && mouseY < height/2+20) fill(255,100);
     rect(width/2-80,height/2-20,160,40);
-    
-    
 
     //Planet information
     fill(255);
     if(worlds.get(planetDisplay) == null) createPlanet();
     text(worlds.get(planetDisplay).name(),width/2-textWidth(worlds.get(planetDisplay).name())/2,height/4+105);
-    
-
-
 
     text("Current planet: " + worlds.get(currentWorld).name(),width/2-textWidth("Current planet: " + worlds.get(currentWorld).name())/2,-50+height*3/4);
     textSize(20);
     stroke(255);
     text("Travel to planet",width/2-textWidth("Travel to planet")/2,height/2+8);
+    text(worlds.get(planetDisplay).description(),width/2-textWidth(worlds.get(planetDisplay).description())/2,height/4+150);
+}
+
+public void drawMain() {
+    image(mainMenu,0,0); 
+    
+    stroke(0);
+    if(mouseX > width/2-150 && mouseX < width/2+150 && mouseY > height-height/16-25 && mouseY < height-height/16+25) fill(200,200); 
+    else noFill(); 
+    rect(width/2-150,height-height/16-25,300,50);
+    textSize(30);
+    fill(255);
+    text("Play Game",width/2-textWidth("Play Game")/2,height-height/16+12.5f);
+
 }
 
 public void createPlanet() {
@@ -357,11 +360,19 @@ class Block{
 
     int hardness;
 
-    Block(int id,String texture,boolean solid,int hardness) {
-        this.id = id;
+    int c;
+    boolean ore;
+
+    Block(String texture,boolean solid,int hardness,boolean ore) {
+        numBlocks++;
+        this.id = numBlocks;
         this.texture = loadImage("Blocks/"+texture);
         this.solid = solid;
         this.hardness = hardness;
+        this.ore = ore;
+        if(ore) {
+            c = color(random(255),random(255),random(255));
+        }
     }
 
     public boolean isSolid() {
@@ -370,6 +381,12 @@ class Block{
 
 
     public void draw(int x,int y) {
+        
+        if(ore) {
+            stroke(0,0);
+            fill(c);
+            rect(x,y,blockSize,blockSize);
+        }
         image(texture, x, y,blockSize,blockSize);
     }
 
@@ -387,31 +404,35 @@ class Chunk {
     int[][] blocks = new int[chunkHeight][chunkSize];
     int x;
     
+    float surfaceSize;
+    float caveAmount;
 
-    Chunk(int x) {
+    Chunk(int x,int oreStart,int oreEnd,float surfaceSize,float caveAmount) {
         this.x = x;
+        this.surfaceSize = surfaceSize;
+        this.caveAmount = caveAmount;
             for(int yy = 0; yy < chunkHeight; yy++) {
                 int[] row = new int[chunkSize];
                 for(int xx = 0; xx < chunkSize; xx++) {
-                    float n = noise((xx+x*chunkSize*blockSize)*0.04f, (yy)*0.04f,0)*255;
-                   
-                    if(yy < 20) {
+                    float n = noise((xx+x*chunkSize)*0.04f, (yy)*0.04f,0)*255;
+                    
+                    if(yy < surfaceSize) {
                         
-                        n *=20.0f/(yy);
-                        if(n < 150 && blocks[yy-1][xx] == 0) {
+                        n *=surfaceSize/(yy);
+                        if(n < caveAmount && blocks[yy-1][xx] == 0) {
                             row[xx] = 2;
-                        }else if(n < 150 && blocks[yy-1][xx] == 2) {
-                            row[xx] = 3;
-                        }else if(n < 150 && n > 100 && blocks[yy-1][xx] == 3) {
-                             row[xx] = 3;
+                        }else if(n < caveAmount && blocks[yy-1][xx] == 2) {
+                            row[xx] = 4;
+                        }else if(n < caveAmount && n > 100 && blocks[yy-1][xx] == 4) {
+                             row[xx] = 4;
                         }else {
-                            if(n > 150) row[xx] = 0;
+                            if(n > caveAmount) row[xx] = 0;
                             else row[xx] = 1;   
                         }
                     }else {
-                        if(n > 150)  row[xx] = 0;
+                        if(n > caveAmount)  row[xx] = 0;
                         else {
-                            for(int i = 5; i < blockTypes.size(); i++) {
+                            for(int i = oreStart; i < oreEnd; i++) {
                                 float rand = i*9999;
                                 float nn = noise((xx+x*chunkSize+rand)*(0.1f), (yy+rand)*(0.1f),0)*255;
                                 if(nn > 180) {
@@ -419,12 +440,12 @@ class Chunk {
                                     i = 11111;
                                 }
                                 else {
-                                    row[xx] = 1; 
-                                    
+                                    row[xx] = 1;                                    
                                 }
                             }                           
                         }  
-                    }          
+                    }   
+                    if(yy == chunkHeight-1) row[xx] = 3;       
             }  
             blocks[yy] = row;
         }
@@ -449,8 +470,8 @@ class Chunk {
         
         xx -= chunkSize*x;
    
-        if(floor(yy) < 0 || floor(yy) > chunkHeight) return 0;
-        if(floor(xx) < 0 || floor(xx) > chunkSize) return 0;
+        if(floor(yy) < 0 || floor(yy) > chunkHeight-1) return 0;
+        if(floor(xx) < 0 || floor(xx) > chunkSize-1) return 0;
         return blocks[floor(yy)][floor(xx)];
         
     }
@@ -468,7 +489,7 @@ class Chunk {
 
     public void drawBackground() {
         float pY = ((float)playerY/(float)blockSize)-16;
-        if(pY < 20) pY = 20;
+        if(pY < surfaceSize) pY = surfaceSize;
         image(background,x*chunkSize*blockSize,pY*blockSize);
     }
 
@@ -575,12 +596,20 @@ class World {
     int id;
     Chunk[] chunks; 
     boolean generated = false;
-
+    int oreStartIndex;
+    int oreEndIndex;
+    int numOre;
     String name = "";
+
+    float surfaceSize = 30;
+    float caveAmount = 150; //lower is more
 
     World() {
         worldCount++;
         id = worldCount;
+        surfaceSize = random(5,100);
+        caveAmount = random(100,250);
+        numOre = (int)random(1,5);
         genName();   
     }
 
@@ -596,12 +625,12 @@ class World {
     }
 
     public int getBlock(float x,float y) {
-        if((int)(x/(chunkSize*blockSize)) < 0 || (int)(x/(chunkSize*blockSize)) > chunks.length) return 0;
+        if((int)(x/(chunkSize*blockSize)) < 0 || (int)(x/(chunkSize*blockSize)) > chunks.length-1) return 0;
         return chunks[(int)(x/(chunkSize*blockSize))].getBlock(x,y);
     }
 
     public void changeBlock(float x,float y,int id) {
-        if((int)(x/(chunkSize*blockSize)) < 0 || (int)(x/(chunkSize*blockSize)) > chunks.length) return;
+        if((int)(x/(chunkSize*blockSize)) < 0 || (int)(x/(chunkSize*blockSize)) > chunks.length-1) return;
         chunks[(int)(x/(chunkSize*blockSize))].changeBlock(x,y,id);
     }
 
@@ -617,11 +646,33 @@ class World {
         return name;
     }
 
+    public String description() {
+        String desc = "";
+        if(caveAmount < 120) desc = desc + "Massive caverns \n";
+        else if(caveAmount < 150) desc = desc + "Lots of caves \n";
+        else if(caveAmount < 250) desc = desc + "Solid crust \n";
+
+        if(surfaceSize > 80) desc = desc + "Mountainous \n";
+        else if(surfaceSize > 50) desc = desc + "Hilly \n";
+        else if(surfaceSize > 20) desc = desc + "Mostly flat \n";
+        else desc = desc + "Barren \n";
+
+        if(numOre > 3) desc = desc + "Resource rich \n";
+        else desc = desc + "Some resources \n";
+        return desc;
+    }
+
     public void generatePlanet() {
         noiseSeed((long)random(-99999999,99999999));
-        chunks = new Chunk[chunkSize];    
+        chunks = new Chunk[chunkSize];   
+        oreStartIndex = blockTypes.size()-1; 
+        for(int i = 0; i < numOre; i++) {
+            Block b = new Block("Iron.png",true,8,true);
+            blockTypes.put(numBlocks,b);
+        }
+        oreEndIndex = blockTypes.size()-1;
         for(int x = 0; x < chunks.length; x++) {
-            Chunk c = new Chunk(x);
+            Chunk c = new Chunk(x,oreStartIndex,oreEndIndex,surfaceSize,caveAmount);
             chunks[x] = c;
         }
         generated = true;
