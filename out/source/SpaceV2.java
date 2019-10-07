@@ -174,6 +174,11 @@ public void draw() {
         fill(255);
         //rect(playerX-(playerSize/2),playerY-(playerSize/2),playerSize,playerSize);
         image(player, playerX-(playerSize/2), playerY-(playerSize/2), playerSize, playerSize);
+
+        noFill();
+        stroke(0);
+        rect((int)((mouseX+playerX-width/2)/blockSize)*blockSize,(int)((mouseY+playerY-height/2)/blockSize)*blockSize,blockSize,blockSize);
+
         translate(-(-playerX+(width/2.0f)), -(-playerY+(height/2.0f)));
    
     //inventory
@@ -202,6 +207,7 @@ public void draw() {
             xOffset = -(int)((inventory.size()*blockSize)/2);
             rect((width/2)+xOffset+selectedItem*blockSize,height-blockSize,blockSize,height-blockSize);
         }
+       
     }else {
         drawGUI();
     }
