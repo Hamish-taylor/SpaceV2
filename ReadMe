@@ -1,5 +1,17 @@
-Controls
+This is a game project i made for my first year engineering computer graphics paper.
 
+Description:
+This game was modeled off of another game by the name of "StarBound",
+but currently only consists of basic procedurally generated levels with slight terrain modifiers
+I wrote this game in processing and have no plans to ever update it past this point.
+All code and assets were created by me.
+Feel free to go through the code and critique it, i am still learning after all :)
+
+Controls
+A: Left 
+D: Right
+W: Jump
+E: Open planet travel menu
 
 
 
